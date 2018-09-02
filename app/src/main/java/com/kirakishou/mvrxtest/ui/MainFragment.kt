@@ -11,14 +11,14 @@ import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
 import com.kirakishou.mvrxtest.R
 import com.kirakishou.mvrxtest.app.BaseFragmentWithRecycler
-import com.kirakishou.mvrxtest.mvrx.viewmodel.DataViewModel
+import com.kirakishou.mvrxtest.mvrx.viewmodel.MainFragmentViewModel
 import com.kirakishou.mvrxtest.ui.epoxy.colorRow
 import com.kirakishou.mvrxtest.ui.epoxy.footerTextRow
 import com.kirakishou.mvrxtest.ui.epoxy.loadingRow
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MainFragment : BaseFragmentWithRecycler() {
-  private val viewModel: DataViewModel by fragmentViewModel()
+  private val viewModel: MainFragmentViewModel by fragmentViewModel()
   private val runOnce = AtomicBoolean(false)
   private var isFragmentFreshlyCreate = false
 
@@ -30,21 +30,6 @@ class MainFragment : BaseFragmentWithRecycler() {
     isFragmentFreshlyCreate = savedInstanceState == null
   }
 
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    epoxyController.onRestoreInstanceState(savedInstanceState)
-  }
-
-  override fun onSaveInstanceState(outState: Bundle) {
-    super.onSaveInstanceState(outState)
-    epoxyController.onSaveInstanceState(outState)
-  }
-
-  override fun onDestroyView() {
-    epoxyController.cancelPendingModelBuild()
-    super.onDestroyView()
-  }
-
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     return@simpleController withState(viewModel) { state ->
       if (state.colors.isNotEmpty()) {
@@ -54,6 +39,9 @@ class MainFragment : BaseFragmentWithRecycler() {
             text(data.id.toString())
             color(data.color)
 
+            //we don't want to trigger the state change way too often thus triggering recyclerView's
+            //redrawing (even though it uses DiffUtils to figure out what needs to be redrawn)
+            //so we are storing every 10th item position in the state
             if (index % 10 == 0) {
               onBind { _, _, position -> viewModel.setLastVisibleItemPosition(position) }
             }
@@ -61,7 +49,11 @@ class MainFragment : BaseFragmentWithRecycler() {
         }
       }
 
-      if (state.lastVisibleItemPosition != -1 && !isFragmentFreshlyCreate && runOnce.compareAndSet(false, true)) {
+      //we want recyclerView to scroll to bottom after the phone has been rotated and we
+      //want to do it only once
+      if (state.lastVisibleItemPosition != -1
+        && !isFragmentFreshlyCreate
+        && runOnce.compareAndSet(false, true)) {
         recyclerView.post {
           recyclerView.scrollToPosition(state.lastVisibleItemPosition)
         }
@@ -88,7 +80,8 @@ class MainFragment : BaseFragmentWithRecycler() {
           callback { _ -> viewModel.reset() }
         }
 
-        Toast.makeText(activity, state.request.error.message ?: "Unknown error", Toast.LENGTH_LONG).show()
+        Toast.makeText(activity, state.request.error.message
+          ?: "Unknown error", Toast.LENGTH_LONG).show()
       }
     }
   }

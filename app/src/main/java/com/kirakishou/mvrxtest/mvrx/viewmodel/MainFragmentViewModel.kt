@@ -6,13 +6,13 @@ import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.MvRxViewModelFactory
 import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.mvrxtest.data.ApiService
-import com.kirakishou.mvrxtest.mvrx.state.DataState
+import com.kirakishou.mvrxtest.mvrx.state.MainFragmentState
 import org.koin.android.ext.android.inject
 
-class DataViewModel(
-  initialState: DataState,
+class MainFragmentViewModel(
+  initialState: MainFragmentState,
   private val apiService: ApiService
-) : BaseMvRxViewModel<DataState>(initialState) {
+) : BaseMvRxViewModel<MainFragmentState>(initialState) {
 
   init {
     fetchNextPage()
@@ -22,12 +22,15 @@ class DataViewModel(
     withState { state ->
       apiService.fetchNextPage(state.lastId, PHOTOS_PER_PAGE)
         .execute {
+          //do not modify the state and do not make request if the request is being executed
           if (it is Loading) {
             return@execute copy()
           }
 
           val newDataList = (it() ?: emptyList())
 
+          //TODO: figure out how to find out that the request is in the loading state without storing
+          //the request itself in the state (it that even possible right now?)
           copy(
             request = it,
             lastId = newDataList.lastOrNull()?.id ?: Long.MAX_VALUE,
@@ -60,13 +63,16 @@ class DataViewModel(
     }
   }
 
-  companion object : MvRxViewModelFactory<DataState> {
-    const val PHOTOS_PER_PAGE = 150
+  companion object : MvRxViewModelFactory<MainFragmentState> {
+    const val PHOTOS_PER_PAGE = 100
 
     @JvmStatic
-    override fun create(activity: FragmentActivity, state: DataState): BaseMvRxViewModel<DataState> {
+    override fun create(
+      activity: FragmentActivity,
+      state: MainFragmentState
+    ): BaseMvRxViewModel<MainFragmentState> {
       val service: ApiService by activity.inject()
-      return DataViewModel(state, service)
+      return MainFragmentViewModel(state, service)
     }
   }
 }

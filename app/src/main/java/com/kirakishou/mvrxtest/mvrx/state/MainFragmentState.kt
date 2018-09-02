@@ -5,7 +5,7 @@ import com.airbnb.mvrx.MvRxState
 import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.mvrxtest.data.response.ColorResponse
 
-data class DataState(
+data class MainFragmentState(
   val colors: List<ColorResponse> = listOf(),
   val lastId: Long = 0,
   val lastVisibleItemPosition: Int = -1,
