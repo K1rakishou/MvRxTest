@@ -21,6 +21,7 @@ class MainFragment : BaseFragmentWithRecycler() {
   private val viewModel: MainFragmentViewModel by fragmentViewModel()
   private val runOnce = AtomicBoolean(false)
   private var isFragmentFreshlyCreate = false
+  private var lastVisibleItemPosition = -1
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_main
 
@@ -28,39 +29,44 @@ class MainFragment : BaseFragmentWithRecycler() {
     super.onViewCreated(view, savedInstanceState)
 
     isFragmentFreshlyCreate = savedInstanceState == null
+
+    savedInstanceState?.let {
+      lastVisibleItemPosition = it.getInt(LAST_VISIBLE_ITEM_POSITION_KEY, -1)
+    }
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+
+    outState.putInt(LAST_VISIBLE_ITEM_POSITION_KEY, lastVisibleItemPosition)
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     return@simpleController withState(viewModel) { state ->
       if (state.colors.isNotEmpty()) {
-        state.colors.forEachIndexed { index, data ->
+        state.colors.forEach { data ->
           colorRow {
             id(data.id)
             text(data.id.toString())
             color(data.color)
 
-            //we don't want to trigger the state change way too often thus triggering recyclerView's
-            //redrawing (even though it uses DiffUtils to figure out what needs to be redrawn)
-            //so we are storing every 10th item position in the state
-            if (index % 10 == 0) {
-              onBind { _, _, position -> viewModel.setLastVisibleItemPosition(position) }
-            }
+            onBind { _, _, position -> lastVisibleItemPosition = position }
           }
         }
       }
 
       //we want recyclerView to scroll to bottom after the phone has been rotated and we
       //want to do it only once
-      if (state.lastVisibleItemPosition != -1
+      if (lastVisibleItemPosition != -1
         && !isFragmentFreshlyCreate
         && runOnce.compareAndSet(false, true)) {
         recyclerView.post {
-          recyclerView.scrollToPosition(state.lastVisibleItemPosition)
+          recyclerView.scrollToPosition(lastVisibleItemPosition)
         }
       }
 
       if (state.request is Success) {
-        if (state.endReached) {
+        if (state.colors.size % MainFragmentViewModel.PHOTOS_PER_PAGE != 0) {
           footerTextRow {
             id("list_end_footer")
             text("End of the list reached")
@@ -84,5 +90,9 @@ class MainFragment : BaseFragmentWithRecycler() {
           ?: "Unknown error", Toast.LENGTH_LONG).show()
       }
     }
+  }
+
+  companion object {
+      const val LAST_VISIBLE_ITEM_POSITION_KEY = "last_visible_item_position"
   }
 }

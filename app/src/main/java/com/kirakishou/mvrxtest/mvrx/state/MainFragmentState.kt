@@ -7,8 +7,5 @@ import com.kirakishou.mvrxtest.data.response.ColorResponse
 
 data class MainFragmentState(
   val colors: List<ColorResponse> = listOf(),
-  val lastId: Long = 0,
-  val lastVisibleItemPosition: Int = -1,
-  val endReached: Boolean = false,
   val request: Async<List<ColorResponse>> = Uninitialized
 ) : MvRxState

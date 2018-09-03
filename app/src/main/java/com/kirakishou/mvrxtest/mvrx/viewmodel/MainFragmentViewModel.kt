@@ -20,7 +20,7 @@ class MainFragmentViewModel(
 
   fun fetchNextPage() {
     withState { state ->
-      apiService.fetchNextPage(state.lastId, PHOTOS_PER_PAGE)
+      apiService.fetchNextPage(state.colors.lastOrNull()?.id ?: 0, PHOTOS_PER_PAGE)
         .execute {
           //do not modify the state and do not make request if the request is being executed
           if (it is Loading) {
@@ -33,9 +33,7 @@ class MainFragmentViewModel(
           //the request itself in the state (it that even possible right now?)
           copy(
             request = it,
-            lastId = newDataList.lastOrNull()?.id ?: Long.MAX_VALUE,
-            colors = colors + newDataList,
-            endReached = newDataList.size < PHOTOS_PER_PAGE
+            colors = colors + newDataList
           )
         }
     }
@@ -45,22 +43,11 @@ class MainFragmentViewModel(
     setState {
       copy(
         request = Uninitialized,
-        lastId = 0,
-        lastVisibleItemPosition = -1,
-        colors = listOf(),
-        endReached = false
+        colors = listOf()
       )
     }
 
     fetchNextPage()
-  }
-
-  fun setLastVisibleItemPosition(position: Int) {
-    setState {
-      copy(
-        lastVisibleItemPosition = position
-      )
-    }
   }
 
   companion object : MvRxViewModelFactory<MainFragmentState> {
