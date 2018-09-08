@@ -30,8 +30,6 @@ class MainFragmentViewModel(
 
       apiService.fetchNextPage(lastId, PHOTOS_PER_PAGE)
         .execute { request ->
-          //TODO: figure out a way to find out that the request is in the loading state without storing
-          //the request itself in the state (it that even possible right now?)
           copy(
             request = request,
             colors = colors + (request() ?: emptyList())

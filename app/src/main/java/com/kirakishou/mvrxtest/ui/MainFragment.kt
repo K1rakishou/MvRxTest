@@ -44,13 +44,21 @@ class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     return@simpleController withState(viewModel) { state ->
       if (state.colors.isNotEmpty()) {
-        state.colors.forEach { data ->
+        state.colors.forEachIndexed { index, data ->
           colorRow {
             id(data.id)
             text(data.id.toString())
             color(data.color)
 
-            onBind { _, _, position -> lastVisibleItemPosition = position }
+            if (index > 0 && index % (10 * SPAN_COUNT) == 0) {
+              onBind { _, _, position ->
+                if (position < lastVisibleItemPosition) {
+                  return@onBind
+                }
+
+                lastVisibleItemPosition = position
+              }
+            }
           }
         }
       }
@@ -58,7 +66,7 @@ class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
       //we want recyclerView to scroll to bottom after the phone has been rotated and we
       //want to do it only once
       if (scrollOnce.compareAndSet(false, true)
-        && lastVisibleItemPosition != -1
+        && lastVisibleItemPosition > 0
         && !isFragmentFreshlyCreate) {
         recyclerView.post {
           recyclerView.scrollToPosition(lastVisibleItemPosition)
@@ -95,6 +103,6 @@ class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
   companion object {
     const val LAST_VISIBLE_ITEM_POSITION_KEY = "last_visible_item_position"
 
-    const val SPAN_COUNT = 2
+    const val SPAN_COUNT = 4
   }
 }
