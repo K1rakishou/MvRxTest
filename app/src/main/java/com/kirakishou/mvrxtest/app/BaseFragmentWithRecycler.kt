@@ -13,32 +13,43 @@ import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.epoxy.EpoxyController
 import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
+import com.kirakishou.mvrxtest.BuildConfig
 import com.kirakishou.mvrxtest.R
 
-abstract class BaseFragmentWithRecycler : BaseMvRxFragment() {
+abstract class BaseFragmentWithRecycler(
+    private val spanCount: Int
+) : BaseMvRxFragment() {
   protected lateinit var recyclerView: EpoxyRecyclerView
   protected lateinit var toolbar: Toolbar
 
-  protected val epoxyController: EpoxyController by lazy { buildEpoxyController() }
+  protected val epoxyController: EpoxyController by lazy {
+    buildEpoxyController().apply { this.isDebugLoggingEnabled = BuildConfig.DEBUG }
+  }
 
   @CallSuper
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
     return inflater.inflate(getFragmentLayoutId(), container, false).apply {
-      toolbar = findViewById<Toolbar>(R.id.toolbar).apply {
-        val navController = NavHostFragment.findNavController(this@BaseFragmentWithRecycler)
-        NavigationUI.setupWithNavController(this, navController)
+      val toolBarInstance = findViewById<Toolbar>(R.id.toolbar)
+      if (toolBarInstance == null) {
+        throw IllegalStateException("BaseFragmentWithRecycler requires fragment to contain " +
+                "Toolbar with id = R.id.toolbar!")
       }
 
       val recyclerViewInstance = findViewById<EpoxyRecyclerView>(R.id.recycler_view)
       if (recyclerViewInstance == null) {
         throw IllegalStateException("BaseFragmentWithRecycler requires fragment to contain " +
-          "RecyclerView with id R.id.recycler_view!")
+          "RecyclerView with id = R.id.recycler_view!")
+      }
+
+      toolbar = toolBarInstance.apply {
+        val navController = NavHostFragment.findNavController(this@BaseFragmentWithRecycler)
+        NavigationUI.setupWithNavController(this, navController)
       }
 
       recyclerView = recyclerViewInstance.apply {
-        epoxyController.spanCount = 2
+        epoxyController.spanCount = spanCount
 
-        layoutManager = GridLayoutManager(activity, 2).apply {
+        layoutManager = GridLayoutManager(activity, spanCount).apply {
           spanSizeLookup = epoxyController.spanSizeLookup
         }
 

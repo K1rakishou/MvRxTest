@@ -17,9 +17,9 @@ import com.kirakishou.mvrxtest.ui.epoxy.footerTextRow
 import com.kirakishou.mvrxtest.ui.epoxy.loadingRow
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MainFragment : BaseFragmentWithRecycler() {
+class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
   private val viewModel: MainFragmentViewModel by fragmentViewModel()
-  private val runOnce = AtomicBoolean(false)
+  private val scrollOnce = AtomicBoolean(false)
   private var isFragmentFreshlyCreate = false
   private var lastVisibleItemPosition = -1
 
@@ -57,9 +57,9 @@ class MainFragment : BaseFragmentWithRecycler() {
 
       //we want recyclerView to scroll to bottom after the phone has been rotated and we
       //want to do it only once
-      if (lastVisibleItemPosition != -1
-        && !isFragmentFreshlyCreate
-        && runOnce.compareAndSet(false, true)) {
+      if (scrollOnce.compareAndSet(false, true)
+        && lastVisibleItemPosition != -1
+        && !isFragmentFreshlyCreate) {
         recyclerView.post {
           recyclerView.scrollToPosition(lastVisibleItemPosition)
         }
@@ -93,6 +93,8 @@ class MainFragment : BaseFragmentWithRecycler() {
   }
 
   companion object {
-      const val LAST_VISIBLE_ITEM_POSITION_KEY = "last_visible_item_position"
+    const val LAST_VISIBLE_ITEM_POSITION_KEY = "last_visible_item_position"
+
+    const val SPAN_COUNT = 2
   }
 }
