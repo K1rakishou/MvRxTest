@@ -42,6 +42,7 @@ class MainFragment : BaseFragmentWithRecycler() {
             //we don't want to trigger the state change way too often thus triggering recyclerView's
             //redrawing (even though it uses DiffUtils to figure out what needs to be redrawn)
             //so we are storing every 10th item position in the state
+
             if (index % 10 == 0) {
               onBind { _, _, position -> viewModel.setLastVisibleItemPosition(position) }
             }
