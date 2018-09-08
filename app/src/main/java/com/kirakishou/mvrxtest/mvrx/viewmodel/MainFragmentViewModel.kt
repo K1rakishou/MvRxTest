@@ -5,6 +5,7 @@ import com.airbnb.mvrx.BaseMvRxViewModel
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.MvRxViewModelFactory
 import com.airbnb.mvrx.Uninitialized
+import com.kirakishou.mvrxtest.BuildConfig
 import com.kirakishou.mvrxtest.data.ApiService
 import com.kirakishou.mvrxtest.mvrx.state.MainFragmentState
 import org.koin.android.ext.android.inject
@@ -12,7 +13,7 @@ import org.koin.android.ext.android.inject
 class MainFragmentViewModel(
   initialState: MainFragmentState,
   private val apiService: ApiService
-) : BaseMvRxViewModel<MainFragmentState>(initialState) {
+) : BaseMvRxViewModel<MainFragmentState>(initialState, BuildConfig.DEBUG) {
 
   init {
     fetchNextPage()
@@ -20,20 +21,20 @@ class MainFragmentViewModel(
 
   fun fetchNextPage() {
     withState { state ->
-      apiService.fetchNextPage(state.colors.lastOrNull()?.id ?: 0, PHOTOS_PER_PAGE)
-        .execute {
-          //do not modify the state and do not make request if the request is being executed
-          if (it is Loading) {
-            return@execute copy()
-          }
+      //do not modify the state and do not make request if the request is being executed
+      if (state.request is Loading) {
+        return@withState
+      }
 
-          val newDataList = (it() ?: emptyList())
+      val lastId = state.colors.lastOrNull()?.id ?: 0
 
-          //TODO: figure out how to find out that the request is in the loading state without storing
+      apiService.fetchNextPage(lastId, PHOTOS_PER_PAGE)
+        .execute { request ->
+          //TODO: figure out a way to find out that the request is in the loading state without storing
           //the request itself in the state (it that even possible right now?)
           copy(
-            request = it,
-            colors = colors + newDataList
+            request = request,
+            colors = colors + (request() ?: emptyList())
           )
         }
     }
