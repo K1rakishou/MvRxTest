@@ -11,7 +11,7 @@ import com.airbnb.epoxy.ModelView
 import com.kirakishou.mvrxtest.R
 import com.kirakishou.mvrxtest.data.response.MyColor
 
-@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
+@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT, fullSpan = false)
 class ColorRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,
