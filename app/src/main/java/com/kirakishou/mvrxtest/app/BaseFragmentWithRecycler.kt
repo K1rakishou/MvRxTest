@@ -23,7 +23,7 @@ abstract class BaseFragmentWithRecycler(
   protected lateinit var toolbar: Toolbar
 
   protected val epoxyController: EpoxyController by lazy {
-    buildEpoxyController().apply { this.isDebugLoggingEnabled = BuildConfig.DEBUG }
+    buildEpoxyController().apply { isDebugLoggingEnabled = BuildConfig.DEBUG }
   }
 
   @CallSuper
@@ -78,7 +78,12 @@ abstract class BaseFragmentWithRecycler(
 
   @CallSuper
   override fun invalidate() {
-    recyclerView.requestModelBuild()
+    // We don't use invalidate because we manually subscribe to only those parts of the state that we
+    // need in order to rebuild the epoxy models. Otherwise the rebuilding process would start every time
+    // even if we don't want it (e.g. when we update lastSeenColorPosition in the state we don't want
+    // to start the rebuilding process). By subscribing manually and then manually rebuilding epoxy
+    // we can store more things in the state while not being afraid of triggering recyclerview redrawing
+    // with every state change.
   }
 
   protected fun simpleController(

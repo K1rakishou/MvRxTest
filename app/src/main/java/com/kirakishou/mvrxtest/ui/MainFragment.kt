@@ -5,40 +5,38 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
-import com.airbnb.mvrx.Fail
-import com.airbnb.mvrx.Success
-import com.airbnb.mvrx.fragmentViewModel
-import com.airbnb.mvrx.withState
+import com.airbnb.mvrx.*
 import com.kirakishou.mvrxtest.R
 import com.kirakishou.mvrxtest.app.BaseFragmentWithRecycler
+import com.kirakishou.mvrxtest.mvrx.state.MainFragmentState
 import com.kirakishou.mvrxtest.mvrx.viewmodel.MainFragmentViewModel
 import com.kirakishou.mvrxtest.ui.epoxy.colorRow
 import com.kirakishou.mvrxtest.ui.epoxy.footerTextRow
 import com.kirakishou.mvrxtest.ui.epoxy.loadingRow
-import java.util.concurrent.atomic.AtomicBoolean
 
 class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
   private val viewModel: MainFragmentViewModel by fragmentViewModel()
-  private val scrollOnce = AtomicBoolean(false)
-  private var isFragmentFreshlyCreate = false
-  private var lastVisibleItemPosition = -1
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_main
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
-    isFragmentFreshlyCreate = savedInstanceState == null
-
-    savedInstanceState?.let {
-      lastVisibleItemPosition = it.getInt(LAST_VISIBLE_ITEM_POSITION_KEY, -1)
+    viewModel.selectSubscribe(MainFragmentState::colors, MainFragmentState::request) { _, _ ->
+      recyclerView.requestModelBuild()
     }
   }
 
-  override fun onSaveInstanceState(outState: Bundle) {
-    super.onSaveInstanceState(outState)
+  override fun onStart() {
+    super.onStart()
 
-    outState.putInt(LAST_VISIBLE_ITEM_POSITION_KEY, lastVisibleItemPosition)
+    withState(viewModel) { state ->
+      if (state.lastSeenColorPosition > 0) {
+        recyclerView.post {
+          recyclerView.scrollToPosition(state.lastSeenColorPosition)
+        }
+      }
+    }
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -52,24 +50,10 @@ class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
 
             if (index > 0 && index % (10 * SPAN_COUNT) == 0) {
               onBind { _, _, position ->
-                if (position < lastVisibleItemPosition) {
-                  return@onBind
-                }
-
-                lastVisibleItemPosition = position
+                viewModel.updateLastSeenColorPosition(position)
               }
             }
           }
-        }
-      }
-
-      //we want recyclerView to scroll to bottom after the phone has been rotated and we
-      //want to do it only once
-      if (scrollOnce.compareAndSet(false, true)
-        && lastVisibleItemPosition > 0
-        && !isFragmentFreshlyCreate) {
-        recyclerView.post {
-          recyclerView.scrollToPosition(lastVisibleItemPosition)
         }
       }
 
@@ -94,15 +78,15 @@ class MainFragment : BaseFragmentWithRecycler(SPAN_COUNT) {
           callback { _ -> viewModel.reset() }
         }
 
-        Toast.makeText(activity, state.request.error.message
-          ?: "Unknown error", Toast.LENGTH_LONG).show()
+        Toast.makeText(
+          activity, state.request.error.message
+          ?: "Unknown error", Toast.LENGTH_LONG
+        ).show()
       }
     }
   }
 
   companion object {
-    const val LAST_VISIBLE_ITEM_POSITION_KEY = "last_visible_item_position"
-
     const val SPAN_COUNT = 4
   }
 }

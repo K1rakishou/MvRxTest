@@ -39,14 +39,14 @@ class MainFragmentViewModel(
   }
 
   fun reset() {
-    setState {
-      copy(
-        request = Uninitialized,
-        colors = listOf()
-      )
-    }
-
+    setState { MainFragmentState() }
     fetchNextPage()
+  }
+
+  fun updateLastSeenColorPosition(position: Int) {
+    setState {
+      copy(lastSeenColorPosition = position)
+    }
   }
 
   companion object : MvRxViewModelFactory<MainFragmentState> {

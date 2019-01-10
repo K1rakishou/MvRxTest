@@ -6,6 +6,7 @@ import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.mvrxtest.data.response.ColorResponse
 
 data class MainFragmentState(
+  val lastSeenColorPosition: Int = 0,
   val colors: List<ColorResponse> = listOf(),
   val request: Async<List<ColorResponse>> = Uninitialized
 ) : MvRxState
