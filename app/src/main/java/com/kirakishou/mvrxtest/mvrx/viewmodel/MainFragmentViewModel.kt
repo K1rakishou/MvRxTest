@@ -4,7 +4,6 @@ import android.support.v4.app.FragmentActivity
 import com.airbnb.mvrx.BaseMvRxViewModel
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.MvRxViewModelFactory
-import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.mvrxtest.BuildConfig
 import com.kirakishou.mvrxtest.data.ApiService
 import com.kirakishou.mvrxtest.mvrx.state.MainFragmentState
@@ -21,7 +20,7 @@ class MainFragmentViewModel(
 
   fun fetchNextPage() {
     withState { state ->
-      //do not modify the state and do not make request if the request is being executed
+      //do not modify the state and do not make a new request if the request is already being executed
       if (state.request is Loading) {
         return@withState
       }
